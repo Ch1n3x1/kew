@@ -70,7 +70,11 @@ func render_nav(n NavNode, b *strings.Builder) {
 	b.WriteString("<ul>\n")
 
 	for _, f := range n.Files {
-		b.WriteString(`<li><a href="` + f.Path + `">` + f.Name + "</a></li>\n")
+		p := f.Path
+		if !strings.HasPrefix(p, "/") {
+			p = "/" + p
+		}
+		b.WriteString(`<li><a href="` + p + `">` + f.Name + "</a></li>\n")
 	}
 
 	for _, c := range n.Children {
