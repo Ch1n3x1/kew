@@ -57,6 +57,9 @@ func build_nav(dir string, root string) (NavNode, bool) {
 		}
 
 		if strings.HasSuffix(e.Name(), ".md") {
+			if e.Name() == "index.md" {
+				continue
+			}
 			rel, _ := filepath.Rel(root, full)
 			html := strings.TrimSuffix(rel, ".md") + ".html"
 
