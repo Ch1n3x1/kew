@@ -9,15 +9,6 @@ import (
 	"strings"
 )
 
-/* TODO: config.h */
-
-const SiteTitle = "mallocd.com"
-const FooterText = "made with <a href=\"https://github.com/uint23/kew\">kew</a>"
-const TemplateFile = "template.html"
-const NavDirSymbol = "/"
-const NavFileSymbol = ": "
-const NavCurrentSymbol = "@ "
-
 type NavNode struct {
 	Name     string
 	Path     string
