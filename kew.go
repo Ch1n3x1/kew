@@ -9,115 +9,172 @@ import (
 	"strings"
 )
 
-func md_to_html(input_path string, output_path string) error {
-	var cmd *exec.Cmd
-	var err error
+/* TODO: config.h */
 
-	/* open source markdown */
-	var in *os.File
-	in, err = os.Open(input_path)
+const SiteTitle = "mallocd.com"
+const FooterText = "made with kew"
+const TemplateFile = "template.html"
+
+type NavNode struct {
+	Name     string
+	Path     string
+	Files    []NavNode
+	Children []NavNode
+}
+
+func title_from_name(name string) string {
+	name = strings.TrimSuffix(name, ".md")
+	name = strings.ReplaceAll(name, "-", " ")
+	return name
+}
+
+func build_nav(dir string, root string) (NavNode, bool) {
+	var node NavNode
+	node.Name = title_from_name(filepath.Base(dir))
+
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return err
+		return node, false
+	}
+
+	for _, e := range entries {
+		full := filepath.Join(dir, e.Name())
+
+		if e.IsDir() {
+			child, ok := build_nav(full, root)
+			if ok {
+				node.Children = append(node.Children, child)
+			}
+			continue
+		}
+
+		if strings.HasSuffix(e.Name(), ".md") {
+			rel, _ := filepath.Rel(root, full)
+			html := strings.TrimSuffix(rel, ".md") + ".html"
+
+			node.Files = append(node.Files, NavNode{
+				Name: title_from_name(e.Name()),
+				Path: html,
+			})
+		}
+	}
+
+	if len(node.Files) == 0 && len(node.Children) == 0 {
+		return node, false
+	}
+
+	return node, true
+}
+
+func render_nav(n NavNode, b *strings.Builder) {
+	b.WriteString("<ul>\n")
+
+	for _, f := range n.Files {
+		b.WriteString(`<li><a href="` + f.Path + `">` + f.Name + "</a></li>\n")
+	}
+
+	for _, c := range n.Children {
+		b.WriteString("<li>" + c.Name)
+		render_nav(c, b)
+		b.WriteString("</li>\n")
+	}
+
+	b.WriteString("</ul>\n")
+}
+
+func markdown_to_html(path string) (string, error) {
+	cmd := exec.Command("lowdown", "-Thtml")
+
+	in, err := os.Open(path)
+	if err != nil {
+		return "", err
 	}
 	defer in.Close()
 
-	/* create output html */
-	var out *os.File
-	out, err = os.Create(output_path)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	/*
-		run:
-		  lowdown -Thtml
-		stdin  <-  markdown file
-		stdout ->  html file
-	*/
-	cmd = exec.Command("lowdown", "-Thtml")
+	var out strings.Builder
 	cmd.Stdin = in
-	cmd.Stdout = out
+	cmd.Stdout = &out
 	cmd.Stderr = os.Stderr
 
 	err = cmd.Run()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return out.String(), nil
 }
 
 func copy_file(src string, dst string) error {
-	var err error
-
-	var in *os.File
-	in, err = os.Open(src)
+	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer in.Close()
 
-	var out *os.File
-	out, err = os.Create(dst)
+	out, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func main() {
-	var err error
-
 	if len(os.Args) != 3 {
 		fmt.Fprintf(os.Stderr, "usage: kew <in> <out>\n")
 		os.Exit(1)
 	}
 
-	var src string = os.Args[1]
-	var out string = os.Args[2]
+	src := os.Args[1]
+	out := os.Args[2]
 
-	fmt.Printf("kew: %s -> %s\n", src, out)
+	/* load template */
+	tmpl, err := os.ReadFile(filepath.Join(src, TemplateFile))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
-	err = filepath.WalkDir(src, func(path string, entry os.DirEntry, err error) error {
+	/* build nav */
+	rootnav, _ := build_nav(src, src)
+	var navbuf strings.Builder
+	render_nav(rootnav, &navbuf)
+
+	/* walk site */
+	err = filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		/* find relative path */
-		var rel string
-		rel, err = filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
+		rel, _ := filepath.Rel(src, path)
+		outpath := filepath.Join(out, rel)
 
-		var outpath string = filepath.Join(out, rel)
-
-		/* mirror src */
-		if entry.IsDir() {
+		if d.IsDir() {
 			return os.MkdirAll(outpath, 0755)
 		}
 
-		/* convert markdown else copy */
 		if strings.HasSuffix(path, ".md") {
+			html, err := markdown_to_html(path)
+			if err != nil {
+				return err
+			}
+
+			page := string(tmpl)
+			page = strings.Replace(page, "{{TITLE}}", SiteTitle, 1)
+			page = strings.Replace(page, "{{NAV}}", navbuf.String(), 1)
+			page = strings.Replace(page, "{{CONTENT}}", html, 1)
+
 			outpath = strings.TrimSuffix(outpath, ".md") + ".html"
-			return md_to_html(path, outpath)
+			return os.WriteFile(outpath, []byte(page), 0644)
 		}
 
 		return copy_file(path, outpath)
 	})
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "kew:", err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-
-	fmt.Println("kew: done")
 }
