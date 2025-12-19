@@ -46,6 +46,11 @@ func build_nav(dir string, root string) (NavNode, bool) {
 		if e.IsDir() {
 			child, ok := build_nav(full, root)
 			if ok {
+				_, err := os.Stat(filepath.Join(full, "index.md"))
+				if err == nil {
+					rel_dir, _ := filepath.Rel(root, full)
+					child.Path = rel_dir + "/index.html"
+				}
 				node.Children = append(node.Children, child)
 			}
 			continue
@@ -77,6 +82,7 @@ func render_nav(n NavNode, b *strings.Builder, cur string) {
 		if !strings.HasPrefix(p, "/") {
 			p = "/" + p
 		}
+
 		sym := NavFileSymbol
 		if p == cur {
 			sym = NavCurrentSymbol
@@ -85,8 +91,21 @@ func render_nav(n NavNode, b *strings.Builder, cur string) {
 	}
 
 	for _, c := range n.Children {
-		/* directory label with symbol */
-		b.WriteString("<li>" + c.Name + NavDirSymbol)
+		sym := NavDirSymbol
+		if c.Path == cur {
+			sym = NavCurrentSymbol
+		}
+
+		if c.Path != "" {
+			p := c.Path
+			if !strings.HasPrefix(p, "/") {
+				p = "/" + p
+			}
+			b.WriteString(`<li><a href="` + p + `">` + c.Name + sym + `</a>`)
+		} else {
+			b.WriteString("<li>" + c.Name + sym)
+		}
+
 		render_nav(c, b, cur)
 		b.WriteString("</li>\n")
 	}
