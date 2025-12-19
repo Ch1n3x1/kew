@@ -12,8 +12,11 @@ import (
 /* TODO: config.h */
 
 const SiteTitle = "mallocd.com"
-const FooterText = "made with kew"
+const FooterText = "made with <a href=\"https://github.com/uint23/kew\">kew</a>"
 const TemplateFile = "template.html"
+const NavDirSymbol = "/"
+const NavFileSymbol = ": "
+const NavCurrentSymbol = "@ "
 
 type NavNode struct {
 	Name     string
@@ -66,7 +69,7 @@ func build_nav(dir string, root string) (NavNode, bool) {
 	return node, true
 }
 
-func render_nav(n NavNode, b *strings.Builder) {
+func render_nav(n NavNode, b *strings.Builder, cur string) {
 	b.WriteString("<ul>\n")
 
 	for _, f := range n.Files {
@@ -74,12 +77,17 @@ func render_nav(n NavNode, b *strings.Builder) {
 		if !strings.HasPrefix(p, "/") {
 			p = "/" + p
 		}
-		b.WriteString(`<li><a href="` + p + `">` + f.Name + "</a></li>\n")
+		sym := NavFileSymbol
+		if p == cur {
+			sym = NavCurrentSymbol
+		}
+		b.WriteString(`<li><a href="` + p + `">` + sym + f.Name + "</a></li>\n")
 	}
 
 	for _, c := range n.Children {
-		b.WriteString("<li>" + c.Name)
-		render_nav(c, b)
+		/* directory label with symbol */
+		b.WriteString("<li>" + c.Name + NavDirSymbol)
+		render_nav(c, b, cur)
 		b.WriteString("</li>\n")
 	}
 
@@ -143,8 +151,6 @@ func main() {
 
 	/* build nav */
 	rootnav, _ := build_nav(src, src)
-	var navbuf strings.Builder
-	render_nav(rootnav, &navbuf)
 
 	/* walk site */
 	err = filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
@@ -164,6 +170,14 @@ func main() {
 			if err != nil {
 				return err
 			}
+
+			relhtml := strings.TrimSuffix(rel, ".md") + ".html"
+			cur := relhtml
+			if !strings.HasPrefix(cur, "/") {
+				cur = "/" + cur
+			}
+			var navbuf strings.Builder
+			render_nav(rootnav, &navbuf, cur)
 
 			page := string(tmpl)
 			page = strings.Replace(page, "{{TITLE}}", SiteTitle, 1)
