@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturación Electrónica</title>
+    <link rel="stylesheet" href="css/factura.css">
+</head>
+<body>
+
+    <header>
+        <h1>Bienvenido a Facturación Electrónica - GRUPO SOCOPUR
+        </h1>
+    </header>
+
+    <form onsubmit="goBack(event)">
+        <img src="img/logo.png" alt="Grupo Socopur" width="150">
+        <h2>Seleccione la empresa que desea consultar</h2>
+        <select id="empresa">
+            <option value="">-- Seleccione --</option>
+            <option value="#">SOCOPUR SAC</option>
+            <option value="#">PROMOTORA GENESIS</option>
+            <option value="#">MOTOLAT</option>
+            <option value="#">SOCOPUR SELVA</option>
+            <option value="#">INPROFER</option>
+        </select>
+        <input type="submit" class="btn" value="Ingresar">
+
+    </form>
+
+    <script>
+
+const backgrounds = [
+            "img/fondo-1.png",
+            "img/fondo-2.png",
+            "img/fondo-3.png"
+        ];
+        
+        let index = 0;
+
+function cambiarFondo() {
+    document.body.style.backgroundImage = `url('${backgrounds[index]}')`;
+    console.log("Mostrando imagen:", backgrounds[index]); // Verifica en consola qué imagen carga
+    index = (index + 1) % backgrounds.length; // Ciclo infinito
+}
+
+// Esperar a que la página cargue completamente antes de cambiar el fondo
+window.onload = function() {
+    cambiarFondo(); // Inicializa con la primera imagen
+    setInterval(cambiarFondo, 5000); // Cambia cada 5 segundos
+};
+
+
+        function redirigir() {
+            let empresa = document.getElementById("empresa").value;
+            if (empresa) {
+                window.location.href = empresa;
+            } else {
+                alert("Seleccione una empresa");
+            }
+        }
+
+        function goBack(event) {
+    event.preventDefault(); 
+    window.history.back(); 
+
+        }
+    </script>
+
+</body>
+</html>

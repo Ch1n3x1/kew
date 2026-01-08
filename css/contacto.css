@@ -1,0 +1,100 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(180deg, #1f0885 0%, #aa6c14 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+form{
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(15px);
+    padding: 80px 50px;
+    width: 400px;
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0 40px 32px rgba(0, 0, 0, 0.35);
+}
+
+.input-container{
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.input-container > i {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    color: #ffffff;
+    background: linear-gradient(135deg, #e76f33, #ff5e62);
+    padding: 12px;
+    border-radius: 50%;
+    font-size: 20px;
+}
+
+.input-container > input{
+    width: 100%;
+    padding: 15px 50px 15px 20px;
+    background-color: transparent;
+    border: 2px solid #ff5e62;
+    border-radius: 35px;
+    font-size: 16px;
+    color: #ffffff;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+::placeholder{
+    color: #ffccc7;
+    font-size: 16px;
+}
+
+.input-container  > input:focus{
+    border-color: #ffc371;
+}
+
+form a{
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 15px;
+    margin-bottom: 25px;
+    display: block;
+}
+
+form a:hover{
+    color: rgb(161, 31, 31);
+}
+
+.btn{
+    background: linear-gradient(135deg, #1c055a, #bd7510);
+    padding: 14px 35px;
+    border: none;
+    border-radius: 25px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+}
+
+.btn:hover{
+    background: linear-gradient(135deg, #be4a0f, #1b095c);
+}
+
+@media (max-width:991px) {
+    body{
+        padding: 20px;
+    }
+
+    form{
+        width: 100%;
+        padding: 40px;
+    }
+}
